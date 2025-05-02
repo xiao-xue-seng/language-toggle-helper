@@ -2,21 +2,29 @@
 
 ## 祈請大寶恩師加持
 
-此【中藏(多語)切換】模組是為了與其它 使用月光藏 API 的平台 共用而獨立出來，在設計上會考慮"中立性"，不是特別針對 Vue 設計。開發者不一定需要使用此模組，可依據下文所提供的資訊，自行切換各語言段落，這樣在耦合性上會更好。只不過差別在於，會沒有同步更新。
+此【中藏(多語)切換】模組是為了與其它「使用月光藏 API 的平台」共用而獨立出來，在設計上會考慮"中立性"，並不是特別針對 Vue 而設計。開發者不一定需要使用此模組，也可依據下文資訊，自行切換語言段落，提升與平台的耦合性，惟無法同步更新。
 
-此模組只負責資料及邏輯運算，UI 切換開關 的創建由各平台（例如 傳統 HTML、Vue、React 等）自行實作。
+此模組僅負責資料及邏輯運算，UI 切換開關由各平台（如 HTML、Vue、React 等）自行實作。
 
-### 🟩 可切換段落的屬性：
+### 🟩 功能版號：
 
-從 API 所取得的 HTML 中，「可切換的段落」會被賦予 `data-toggle-lang` 屬性，它的值就是語言代號。例如：
+「中藏(多語)切換」功能版本訊息以 `<meta>` 標籤標記：
+
+```html
+<meta name="lang-toggle-version" content="1.0" />
+```
+
+### 🟩 「可切換段落」屬性：
+
+API 返回的 HTML 內容中，可切換段落會帶有 `data-toggle-lang` 屬性，值為該段落的語言代號。例如：
 
 ```html
 <p class="scripture-modern" data-toggle-lang="modern">如果因此不害怕惡趣也不皈依的話...。</p>
 ```
 
-### 🟩 語言種類：
+### 🟩 支援語言：
 
-目前支援的語言種類有：
+目前支援以下語言：
 
 | 代號        | 語言 |
 | ----------- | ---- |
@@ -25,69 +33,71 @@
 | `classical` | 古文 |
 | `modern`    | 白話 |
 
-從模組的 `dataList` 屬性，可得知所有"語言"的資料及當前狀態。它所傳回的陣列中，每個項目是一種"語言"，而每個語言項目中包含以下資訊：
+模組的 `dataList` 屬性提供所有語言的狀態資訊，每個語言項目包含：
 
-| key         | value     | 意義                   | 讀寫 | 用途                 |
-| ----------- | --------- | ---------------------- | ---- | -------------------- |
-| `lang`      | `String`  | 語言代號               | 唯讀 | 識別                 |
-| `enabled`   | `Boolean` | 開關狀態               | 讀寫 | 綁定 UI 切換關關的值 |
-| `available` | `Boolean` | 是否有這個語言可供切換 | 讀寫 | (不應該直接改變它)   |
-| `label`     | `String`  | 文字標籤               | 唯讀 | UI 開關的文字標籤    |
+| key         | value     | 意義                 | 讀寫 | 用途                 |
+| ----------- | --------- | -------------------- | ---- | -------------------- |
+| `lang`      | `String`  | 語言代號             | 唯讀 | 識別                 |
+| `enabled`   | `Boolean` | 開關狀態             | 讀寫 | 綁定 UI 切換開關的值 |
+| `available` | `Boolean` | 是否有此語言可供切換 | 讀寫 | (不應直接修改)       |
+| `label`     | `String`  | 文字標籤             | 唯讀 | UI 開關的標籤        |
 
 ### 🟩 使用步驟：
 
-先列出所有步驟，再逐一說明。
+概述步驟後，再詳述：
 
-- 創建實例，可自訂開關預設值。
-- 綁定 本文元素，讓模組可以控制其中的語言段落。
-- 依據 `availableLanguages` 列表 建立 UI 切換開關。
-- 將 切換開關的值 綁定到 `availableLanguages` 列表項目 的 `enabled`。
-- 當本文內容變更時：
-  - 呼叫 `reset()`。
-  - 如果更新本文時會造成本文元素更換，應重新綁定新元素。
-  - 當本文內容 HTML 取得時，呼叫 `updateAvailabilityByHtml()`。(二選一)
-  - 當本文內容渲染完成時，呼叫 `updateAvailabilityByElement()`。(二選一)
-  - 當本文內容渲染完成時，呼叫 `applyLanguageToggles()` 以套用首次開關狀態。
-- 依需要訂閱變更通知。
+1. 創建模組實例，可自訂開關預設值。
+2. 綁定本文元素，使模組可控制語言段落顯示。
+3. 依據 `availableLanguages` 清單建立 UI 切換開關。
+4. 將開關狀態綁定至 `availableLanguages` 內 `enabled` 屬性。
+5. 本文內容變更時：
+   - 呼叫 `reset()` 重置狀態。
+   - 若本文元素更換，則重新綁定新元素。
+   - 呼叫 `updateAvailabilityByHtml()` 或 `updateAvailabilityByElement()` 更新可用語言狀態。
+   - 呼叫 `applyLanguageToggles()` 以同步開關狀態。
+6. 訂閱變更通知以監測語言狀態。
+7. 銷毀實例。
 
-#### 🟢 創建實例
+#### 🟢 創建模組實例：
 
 ```javascript
 let languageToggleHelper = LanguageToggleHelper();
 ```
 
-自訂「開關預設值」的範例
+可自訂「開關預設值」：
 
 ```javascript
 let languageToggleHelper = LanguageToggleHelper(new SwitchConfig({ bo: false }));
 ```
 
-#### 🟢 綁定本文元素
+#### 🟢 綁定本文元素：
 
-「本文元素」是要讓模組控制的根元素，當 UI 開關變化時，模組會控制此元素中段落的顯示狀態。本文元素越貼近實際文字區塊，執行時效率越好。譬如假使將`<body>`當作本文元素，雖然也是可以運作，但每次切換開關都必須在許多不相關的元素中搜尋。
+要讓模組控制的根元素稱為「本文元素」，UI 開關變化時，模組會控制該元素內的語言段落顯示。
 
-綁定的方式可對 `contextElement` 屬性賦值，或使用 `bindContextElement()`，兩者等效。
+在挑選本文元素時，越貼近實際文字區塊，執行時效率越好。譬如假使將整個`<body>`當作本文元素，雖然也是可以運作，但每次切換時，都必須在許多不相關的元素中搜尋，效率自然不高。
+
+可使用 `contextElement` 屬性或 `bindContextElement()` 進行綁定，兩者等效：
 
 ```javascript
 languageToggleHelper.contextElement = yourContextElement;
 languageToggleHelper.bindContextElement(yourContextElement);
 ```
 
-若要解除綁定，可給予任何「非 HTMLElement」的值。
+解除綁定，可給予任何「非 HTMLElement」的值：
 
 ```javascript
 languageToggleHelper.contextElement = false;
 languageToggleHelper.contextElement = null;
 ```
 
-`bindContextElement()`會傳回模組物件自身，方便串接。例如：
+`bindContextElement()` 返回自身，方便串接：
 
 ```javascript
 languageToggleHelper.bindContextElement(null).reset();
 languageToggleHelper.bindContextElement(yourContextElement).applyLanguageToggles();
 ```
 
-必須確保本文元素已經渲染完成後，才能進行綁定。以 Vue 為例，可以在 `mounted()` 的 `$nextTick()` 內進行：
+必須確保本文元素已渲染完成後再進行綁定。例如在 Vue `mounted()` 的 `$nextTick()` 內執行：
 
 ```javascript
   mounted() {
@@ -99,9 +109,9 @@ languageToggleHelper.bindContextElement(yourContextElement).applyLanguageToggles
 
 如果所提供的參數不是 `HTMLElement`，則 `contextElement = false`。
 
-#### 🟢 依據 availableLanguages 建立 UI 切換開關
+#### 🟢 依據 availableLanguages 建立 UI 切換開關：
 
-透過 `availableLanguages` 屬性，可取得「當前本文中可供切換的語言清單」，它其實是總表 `dataList` 的篩選結果，對其中一者的內容作修改，等同於對另一者修改。
+`availableLanguages` 屬性提供當前本文內可供切換的語言清單，它其實是總表 `dataList` 的篩選結果，對其中一者的內容作修改，等同於對另一者修改。
 
 利用 `availableLanguages` 決定 UI 需要渲染哪些開關。以 Vue 為例：
 
@@ -122,11 +132,10 @@ languageToggleHelper.bindContextElement(yourContextElement).applyLanguageToggles
 
 {% endraw %}
 
-上述範例模板中已將 切換開關的值 雙向綁定到 availableLanguages 列表的 enabled。
+上述範例模板中已將 切換開關的值 雙向綁定到 `availableLanguages` 列表的 `enabled`。
+由於此模組的 `availableLanguages` 非 Vue 響應變數，所以必需自行定義一個響應變數，並訂閱 `onAvailableLanguagesChange()` 更新狀態：
 
-此模組的`availableLanguages`屬性本身並不是 Vue 響應變數，所以需要自己定義一個，然後再透過訂閱模組的「變更通知 `onAvailableLanguagesChange()`」來更新。
-
-定義一個響應變數：
+定義響應變數：
 
 ```javascript
   data() {
@@ -136,7 +145,7 @@ languageToggleHelper.bindContextElement(yourContextElement).applyLanguageToggles
   },
 ```
 
-訂閱變更通知以更新響應變數：
+訂閱變更通知。將模組的 `availableLanguages` 內容填入響應變數中：
 
 ```javascript
   created() {
@@ -155,24 +164,26 @@ languageToggleHelper.bindContextElement(yourContextElement).applyLanguageToggles
   },
 ```
 
-如果有需要，可以使用 `offAvailableLanguagesChange(callback)` 來移除訂閱。
+移除訂閱方式：
 
-#### 🟢 開關狀態記憶
+```javascript
+offAvailableLanguagesChange(callback);
+```
 
-模組會自動將使用者操作的開關狀態紀錄在 `localStorage` 中，索引名稱為 `AMEC_LanguageToggleState`。
-在創建模組時，會優先採用「使用者狀態值」作為開關初始值，然後才是「自訂預設值」(如果有的話)。
-「使用者狀態值」會跨文章保持，假使當前關閉了藏文，切換到下一篇文章時仍會是關閉藏文。
+#### 🟢 開關狀態記憶：
 
-#### 🟢 本文內容變更
+模組會將使用者的語言開關狀態儲存於 `localStorage` (索引名稱為 `AMEC_LanguageToggleState`)，以便跨文章維持相同偏好設定。
 
-當本文內容變更時，需要做以下幾件事：
+#### 🟢 本文內容變更：
+
+當本文內容變更時，需執行以下操作：
 
 1. 呼叫 `reset()` 重置開關的狀態及可用性。
-2. 如果你的應用在變更內容時會更換本文元素，則應在新元素完成渲染後，重新綁定新元素。
-3. 更新語言的可用性，有兩種方式，可選其中之一：
-   1. 本文內容 HTML 取得後，呼叫 `updateAvailabilityByHtml()`。這可以在內容實際渲染之前進行。如果你希望盡早得知有哪些語言可切換，可以用這個方法。
-   2. 本文內容初次渲染完成後，呼叫 `updateAvailabilityByElement()`。它會依據綁定的本文元素來更新。
-4. 在本文內容初次渲染完成後，必須呼叫 `applyLanguageToggles()` 以套用第一次的開關值，這樣才能讓本文的顯示狀態與開關同步。
+2. 若本文元素更換，應重新綁定新元素。
+3. 更新語言的可用性，有兩種方式可選：
+   1. 本文內容 HTML 取得後，呼叫 `updateAvailabilityByHtml()`。此方式不需要內容已渲染完成，適用於希望盡早得知語言可用性的場合。
+   2. 本文內容初次渲染完成後，呼叫 `updateAvailabilityByElement()`。它會依據所綁定的本文元素來更新。
+4. 在本文內容初次渲染完成後，呼叫 `applyLanguageToggles()` 以同步開關狀態。
 
 以 Vue 為例：
 
@@ -209,9 +220,9 @@ languageToggleHelper.bindContextElement(yourContextElement).applyLanguageToggles
   },
 ```
 
-#### 🟢 訂閱變更通知
+#### 🟢 訂閱語言變更通知：
 
-此模組提供「可切換語言變更」通知，你可以訂閱處理函數，在可用語言變更時進行適當處理，例如在 Vue 中更新響應變數。
+此模組提供「可切換語言變更」通知，你可以登記處理函數，在可用語言變更時進行適當處理，例如在 Vue 中更新響應變數。
 
 登記：
 
@@ -227,6 +238,8 @@ onAvailableLanguagesChange(callback);
 offAvailableLanguagesChange(callback);
 ```
 
+#### 🟢 銷毀模組：
+
 最後，模組提供一個銷毀方法，可徹底清除引用，防止殘留問題。以 Vue 為例：
 
 ```javascript
@@ -234,4 +247,16 @@ offAvailableLanguagesChange(callback);
   beforeDestroy() {
     languageToggleHelper.destroy();
   }
+```
+
+## 🟩 其他技術資訊：
+
+以下資訊供「自行實現切換功能」時參考。
+
+🟢 `data-toggle-lang="x"` 表示該段落不參與語言切換。這是用於編輯時期，搭配自斷判斷語言功能的一種標籤。所以，你並不需要創建一個「x」語言切換開關。
+
+🟢 自動模式 `<meta>` 標籤僅於編輯時使用，無前端作用：
+
+```html
+<meta name="lang-toggle-mode" content="auto" />
 ```
